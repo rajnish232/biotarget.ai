@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import DiscoveryCanvas from "./pages/DiscoveryCanvas";
+import ComparisonView from "./pages/ComparisonView";
 import Billing from "./pages/Billing";
 import Settings from "./pages/Settings";
 import LandingPage from "./pages/LandingPage";
@@ -156,6 +157,13 @@ export default function App() {
             }}
             onSave={handleSaveToggle}
             isSaved={targetData ? savedTargets.includes(targetData.geneSymbol) : false}
+          />
+        );
+      case "comparison":
+        return (
+          <ComparisonView
+            onSearchTarget={handleSearch}
+            savedTargets={savedTargets}
           />
         );
       case "billing":

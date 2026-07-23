@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Target, Sparkles, CreditCard, Settings, Dna, LogOut, LogOutIcon } from "lucide-react";
+import { LayoutDashboard, Target, GitCompare, Sparkles, CreditCard, Settings, Dna, LogOut, LogOutIcon } from "lucide-react";
 
 interface SidebarProps {
   currentView: string;
@@ -38,6 +38,7 @@ export default function Sidebar({
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "discovery", label: "Target Discovery", icon: Target, badge: savedTargetsCount > 0 ? savedTargetsCount.toString() : undefined },
+    { id: "comparison", label: "Compare Matrix", icon: GitCompare },
     { id: "billing", label: "Plans & Billing", icon: CreditCard },
     { id: "settings", label: "Settings", icon: Settings },
   ];

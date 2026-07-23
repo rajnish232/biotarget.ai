@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   ArrowLeft, ShieldAlert, Sparkles, BookOpen, 
   MapPin, CheckCircle, HelpCircle, Save, Printer,
-  ShieldCheck, Shield, FileText, AlertCircle
+  ShieldCheck, Shield, FileText, AlertCircle, Download
 } from "lucide-react";
 import type { BioTargetData } from "../services/api";
 import type { TargetAnalysis } from "../services/ai";
@@ -10,6 +10,7 @@ import MetricCard from "../components/MetricCard";
 import SubcellularVisualizer from "../components/SubcellularVisualizer";
 import CompoundTable from "../components/CompoundTable";
 import ReportPDF from "../components/ReportPDF";
+import { exportTargetToCSV } from "../utils/csvExport";
 
 interface DiscoveryCanvasProps {
   data: BioTargetData | null;
@@ -240,6 +241,11 @@ export default function DiscoveryCanvas({
           <button onClick={onSave} className={`btn btn-secondary ${isSaved ? "saved-active" : ""}`}>
             <Save size={16} />
             <span>{isSaved ? "Saved to Target Pipeline" : "Save Target"}</span>
+          </button>
+
+          <button onClick={() => exportTargetToCSV(data, analysis)} className="btn btn-secondary">
+            <Download size={16} />
+            <span>Export CSV</span>
           </button>
           
           <button onClick={handlePrint} className="btn btn-primary">

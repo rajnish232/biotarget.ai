@@ -317,11 +317,13 @@ const mockTargets: Record<string, BioTargetData> = {
   }
 };
 
+import { API_BASE } from "../config";
+
 export async function fetchBioTargetData(geneSymbol: string): Promise<BioTargetData> {
   const upperSymbol = geneSymbol.trim().toUpperCase();
 
   try {
-    const res = await fetch(`http://localhost:3001/api/target/${encodeURIComponent(upperSymbol)}`);
+    const res = await fetch(`${API_BASE}/api/target/${encodeURIComponent(upperSymbol)}`);
     if (!res.ok) {
       throw new Error(`Server returned status: ${res.status}`);
     }

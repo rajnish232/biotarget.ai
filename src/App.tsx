@@ -10,6 +10,7 @@ import { fetchBioTargetData } from "./services/api";
 import type { BioTargetData } from "./services/api";
 import { analyzeTarget } from "./services/ai";
 import type { TargetAnalysis } from "./services/ai";
+import { API_BASE } from "./config";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<{ email: string; orgName: string } | null>(null);
@@ -42,7 +43,7 @@ export default function App() {
   // Fetch saved targets from backend database files
   const syncSavedTargets = async (email: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/pipeline/${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_BASE}/api/pipeline/${encodeURIComponent(email)}`);
       if (res.ok) {
         const list = await res.json();
         setSavedTargets(list.map((t: any) => t.geneSymbol));
@@ -92,7 +93,7 @@ export default function App() {
     try {
       if (isSaved) {
         // Delete from database
-        const res = await fetch(`http://localhost:3001/api/pipeline/${encodeURIComponent(currentUser.email)}/${encodeURIComponent(gene)}`, {
+        const res = await fetch(`${API_BASE}/api/pipeline/${encodeURIComponent(currentUser.email)}/${encodeURIComponent(gene)}`, {
           method: "DELETE"
         });
         if (res.ok) {
@@ -100,7 +101,7 @@ export default function App() {
         }
       } else {
         // Save to database
-        const res = await fetch(`http://localhost:3001/api/pipeline`, {
+        const res = await fetch(`${API_BASE}/api/pipeline`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

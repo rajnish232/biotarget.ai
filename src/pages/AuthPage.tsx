@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Dna, ShieldAlert, CheckCircle2, Lock, Mail, Building } from "lucide-react";
+import { API_BASE } from "../config";
 
 interface AuthPageProps {
   onAuthSuccess: (user: { email: string; orgName: string }) => void;
@@ -29,7 +30,7 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
     const endpoint = isSignUp ? "signup" : "login";
 
     try {
-      const response = await fetch(`http://localhost:3001/api/auth/${endpoint}`, {
+      const response = await fetch(`${API_BASE}/api/auth/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

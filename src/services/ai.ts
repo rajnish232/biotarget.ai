@@ -22,13 +22,15 @@ export interface BackendStatus {
   hasApiKey: boolean;
 }
 
+import { API_BASE } from "../config";
+
 // Check if secure backend is active and has configured credentials
 export async function checkBackendStatus(): Promise<BackendStatus> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout check
 
-    const res = await fetch("http://localhost:3001/api/status", { signal: controller.signal });
+    const res = await fetch(`${API_BASE}/api/status`, { signal: controller.signal });
     clearTimeout(timeoutId);
 
     if (res.ok) {

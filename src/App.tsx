@@ -14,7 +14,7 @@ import { API_BASE } from "./config";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<{ email: string; orgName: string } | null>(null);
-  const [showAppConsole, setShowAppConsole] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState<"landing" | "auth" | "workbench">("landing");
   const [currentView, setCurrentView] = useState("dashboard");
   const [targetData, setTargetData] = useState<BioTargetData | null>(null);
   const [targetAnalysis, setTargetAnalysis] = useState<TargetAnalysis | null>(null);
@@ -129,9 +129,9 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setShowAppConsole(false);
     localStorage.removeItem("biotarget_user");
     setSavedTargets([]);
+    setCurrentScreen("landing");
   };
 
   const renderActiveView = () => {
@@ -173,24 +173,39 @@ export default function App() {
     }
   };
 
-  // 1. Gated auth screen
-  if (!currentUser) {
+  // 1. Landing Page (First screen for all visitors)
+  if (currentScreen === "landing") {
+    return (
+      <LandingPage
+        onLaunch={() => {
+          if (currentUser) {
+            setCurrentScreen("workbench");
+          } else {
+            setCurrentScreen("auth");
+          }
+        }}
+        onAuthClick={() => setCurrentScreen("auth")}
+        isLoggedIn={!!currentUser}
+      />
+    );
+  }
+
+  // 2. Authentication Portal (Sign In / Sign Up)
+  if (currentScreen === "auth") {
     return (
       <AuthPage 
         onAuthSuccess={(user) => { 
           setCurrentUser(user); 
           localStorage.setItem("biotarget_user", JSON.stringify(user)); 
           syncSavedTargets(user.email);
+          setCurrentScreen("workbench");
         }} 
+        onBackToHome={() => setCurrentScreen("landing")}
       />
     );
   }
 
-  // 2. SaaS Marketing Screen
-  if (!showAppConsole) {
-    return <LandingPage onLaunch={() => setShowAppConsole(true)} />;
-  }
-
+  // 3. SaaS Console Workbench
   return (
     <div className="app-container">
       {/* Sidebar Navigation */}
@@ -201,10 +216,10 @@ export default function App() {
           if (view === "dashboard" && currentUser) syncSavedTargets(currentUser.email);
         }}
         savedTargetsCount={savedTargets.length}
-        onExitConsole={() => setShowAppConsole(false)}
+        onExitConsole={() => setCurrentScreen("landing")}
         onLogout={handleLogout}
-        userEmail={currentUser.email}
-        userOrg={currentUser.orgName}
+        userEmail={currentUser?.email}
+        userOrg={currentUser?.orgName}
       />
 
       {/* Main View Area */}

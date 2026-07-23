@@ -2,9 +2,11 @@ import { Dna, Sparkles, Database, ShieldAlert, FlaskConical, CheckCircle2, Chevr
 
 interface LandingPageProps {
   onLaunch: () => void;
+  onAuthClick?: () => void;
+  isLoggedIn?: boolean;
 }
 
-export default function LandingPage({ onLaunch }: LandingPageProps) {
+export default function LandingPage({ onLaunch, onAuthClick, isLoggedIn }: LandingPageProps) {
   const features = [
     {
       icon: Database,
@@ -62,9 +64,16 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
           <a href="#technology">Technology</a>
           <a href="#pricing">Pricing</a>
         </nav>
-        <button onClick={onLaunch} className="btn btn-primary nav-cta">
-          Enter Workspace <ChevronRight size={14} />
-        </button>
+        <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
+          {!isLoggedIn && onAuthClick && (
+            <button onClick={onAuthClick} className="btn btn-outline" style={{ padding: "0.45rem 0.9rem", fontSize: "0.825rem" }}>
+              Sign In
+            </button>
+          )}
+          <button onClick={onLaunch} className="btn btn-primary nav-cta">
+            {isLoggedIn ? "Go to Workspace" : "Start Free Beta"} <ChevronRight size={14} />
+          </button>
+        </div>
       </header>
 
       {/* 2. Hero Section */}
@@ -84,7 +93,7 @@ export default function LandingPage({ onLaunch }: LandingPageProps) {
 
           <div className="hero-ctas">
             <button onClick={onLaunch} className="btn btn-primary btn-hero-primary">
-              Launch Workbench Console <Play size={12} fill="currentColor" />
+              {isLoggedIn ? "Launch Workbench Console" : "Start Free Beta Access"} <Play size={12} fill="currentColor" />
             </button>
             <a href="#features" className="btn btn-secondary btn-hero-secondary">
               Explore Features

@@ -4,9 +4,10 @@ import { API_BASE } from "../config";
 
 interface AuthPageProps {
   onAuthSuccess: (user: { email: string; orgName: string }) => void;
+  onBackToHome?: () => void;
 }
 
-export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
+export default function AuthPage({ onAuthSuccess, onBackToHome }: AuthPageProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,12 +66,24 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
     <div className="auth-portal-wrapper fade-in">
       <div className="auth-portal-card glass-card">
         {/* Brand Header */}
-        <div className="auth-brand-flex">
-          <Dna className="brand-logo-spin" size={32} />
-          <div>
-            <h1 className="auth-brand-name">BIOTARGET AI</h1>
-            <p className="auth-brand-tag">Enterprise Validation Workspace</p>
+        <div className="auth-brand-flex" style={{ justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <Dna className="brand-logo-spin" size={32} />
+            <div>
+              <h1 className="auth-brand-name">BIOTARGET AI</h1>
+              <p className="auth-brand-tag">Enterprise Validation Workspace</p>
+            </div>
           </div>
+          {onBackToHome && (
+            <button
+              type="button"
+              onClick={onBackToHome}
+              className="toggle-mode-btn"
+              style={{ fontSize: "0.75rem" }}
+            >
+              ← Home
+            </button>
+          )}
         </div>
 
         {/* Form Panel */}

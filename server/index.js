@@ -5,6 +5,9 @@ import { aggregateTarget } from "./aggregator.js";
 import { 
   findUserByEmail, 
   createUser, 
+  createOrGetGoogleUser,
+  verifyPassword,
+  generateSessionToken,
   getSavedTargets, 
   saveTarget, 
   removeTarget 
@@ -29,11 +32,15 @@ app.get("/api/status", (req, res) => {
   });
 });
 
-// 2. User Authentication: Signup Route
+// 2. User Authentication: Signup Route (PBKDF2 Salted Encryption)
 app.post("/api/auth/signup", (req, res) => {
   const { email, password, orgName } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password fields are required." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Security Policy: Password must be at least 6 characters long." });
   }
 
   const existing = findUserByEmail(email);
@@ -46,13 +53,16 @@ app.post("/api/auth/signup", (req, res) => {
     return res.status(500).json({ error: "Could not create user profile. Please try again." });
   }
 
+  const token = generateSessionToken(user.email);
+
   res.json({
     email: user.email,
-    orgName: user.orgName
+    orgName: user.orgName,
+    token: token
   });
 });
 
-// 3. User Authentication: Login Route
+// 3. User Authentication: Login Route (PBKDF2 Salt Verification)
 app.post("/api/auth/login", (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -60,17 +70,48 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const user = findUserByEmail(email);
-  if (!user || user.password !== password) {
-    return res.status(401).json({ error: "Invalid email credentials or incorrect password." });
+  if (!user) {
+    return res.status(401).json({ error: "Invalid credentials. Account not found." });
   }
+
+  // Handle Google-only accounts trying to sign in via password
+  if (user.isGoogleAuth && !user.passwordHash) {
+    return res.status(400).json({ error: "This account was registered via Google Sign-In. Please click 'Continue with Google'." });
+  }
+
+  const isValid = verifyPassword(password, user.salt, user.passwordHash);
+  if (!isValid) {
+    return res.status(401).json({ error: "Incorrect password. Please verify your credentials." });
+  }
+
+  const token = generateSessionToken(user.email);
 
   res.json({
     email: user.email,
-    orgName: user.orgName
+    orgName: user.orgName,
+    token: token
   });
 });
 
-// 4. Saved Target Pipelines: Fetch bookmarks
+// 4. User Authentication: Google OAuth SSO Route
+app.post("/api/auth/google", (req, res) => {
+  const { email, name, picture } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Google account email is required." });
+  }
+
+  const user = createOrGetGoogleUser(email, name, picture);
+  const token = generateSessionToken(user.email);
+
+  res.json({
+    email: user.email,
+    orgName: user.orgName,
+    token: token,
+    picture: user.picture
+  });
+});
+
+// 5. Saved Target Pipelines: Fetch bookmarks
 app.get("/api/pipeline/:email", (req, res) => {
   const email = req.params.email;
   if (!email) {
@@ -80,7 +121,7 @@ app.get("/api/pipeline/:email", (req, res) => {
   res.json(targets);
 });
 
-// 5. Saved Target Pipelines: Save bookmark
+// 6. Saved Target Pipelines: Save bookmark
 app.post("/api/pipeline", (req, res) => {
   const { email, targetData } = req.body;
   if (!email || !targetData || !targetData.geneSymbol) {
@@ -95,7 +136,7 @@ app.post("/api/pipeline", (req, res) => {
   }
 });
 
-// 6. Saved Target Pipelines: Delete bookmark
+// 7. Saved Target Pipelines: Delete bookmark
 app.delete("/api/pipeline/:email/:symbol", (req, res) => {
   const { email, symbol } = req.params;
   if (!email || !symbol) {
@@ -110,7 +151,7 @@ app.delete("/api/pipeline/:email/:symbol", (req, res) => {
   }
 });
 
-// 7. Live Target Data Aggregator Route
+// 8. Live Target Data Aggregator Route
 app.get("/api/target/:symbol", async (req, res) => {
   const symbol = req.params.symbol;
   if (!symbol || symbol.trim() === "") {
@@ -126,7 +167,7 @@ app.get("/api/target/:symbol", async (req, res) => {
   }
 });
 
-// 8. Secure Proxy Target Analysis Route
+// 9. Secure Proxy Target Analysis Route
 app.post("/api/analyze", async (req, res) => {
   const data = req.body;
   const apiKey = process.env.GEMINI_API_KEY;

@@ -1,10 +1,31 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const dbPath = path.join(__dirname, "db.json");
+
+// Cryptographic Password Salt & Hash Helper (PBKDF2 SHA-512)
+export function hashPassword(password, salt = null) {
+  if (!salt) {
+    salt = crypto.randomBytes(16).toString("hex");
+  }
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+  return { salt, hash };
+}
+
+export function verifyPassword(password, salt, storedHash) {
+  if (!salt || !storedHash) return false;
+  const { hash } = hashPassword(password, salt);
+  return hash === storedHash;
+}
+
+export function generateSessionToken(email) {
+  const payload = `${email}:${Date.now()}:${crypto.randomBytes(8).toString("hex")}`;
+  return crypto.createHmac("sha256", "biotarget_secret_key_2026").update(payload).digest("hex");
+}
 
 // Read database helper
 export function readDb() {
@@ -41,14 +62,46 @@ export function findUserByEmail(email) {
 
 export function createUser(email, password, orgName) {
   const db = readDb();
-  const exists = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const cleanEmail = email.toLowerCase();
+  const exists = db.users.find(u => u.email.toLowerCase() === cleanEmail);
   if (exists) return null;
 
+  const { salt, hash } = hashPassword(password);
+
   const newUser = {
-    email: email.toLowerCase(),
-    password: password, // Store password securely for demo environment
+    email: cleanEmail,
+    salt: salt,
+    passwordHash: hash,
     orgName: orgName || "Global BioTech Lab",
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    isGoogleAuth: false
+  };
+
+  db.users.push(newUser);
+  writeDb(db);
+  return newUser;
+}
+
+export function createOrGetGoogleUser(email, name, picture) {
+  const db = readDb();
+  const cleanEmail = email.toLowerCase();
+  let user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (user) {
+    user.lastLoginAt = new Date().toISOString();
+    if (picture) user.picture = picture;
+    writeDb(db);
+    return user;
+  }
+
+  const newUser = {
+    email: cleanEmail,
+    orgName: name ? `${name}'s Research Lab` : "Google Partner Lab",
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+    isGoogleAuth: true,
+    picture: picture || undefined
   };
 
   db.users.push(newUser);

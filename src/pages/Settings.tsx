@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { FormEvent } from "react";
-import { Save, CheckCircle, Database, Server, RefreshCw, ChevronDown, ShieldCheck } from "lucide-react";
+import { Save, CheckCircle, Database, Server, RefreshCw, ChevronDown, ShieldCheck, Building, Award, Lock } from "lucide-react";
 import { checkBackendStatus } from "../services/ai";
 import type { BackendStatus } from "../services/ai";
 
@@ -63,7 +63,8 @@ function CustomDropdown({
                 setIsOpen(false);
               }}
             >
-              {opt.label}
+              <span>{opt.label}</span>
+              {opt.value === value && <CheckCircle size={12} className="selected-icon" />}
             </li>
           ))}
         </ul>
@@ -76,6 +77,11 @@ export default function Settings() {
   const [backendState, setBackendState] = useState<BackendStatus>({ online: false, hasApiKey: false });
   const [checkingBackend, setCheckingBackend] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // User & Organization Profile
+  const [userEmail, setUserEmail] = useState("researcher@novartis.com");
+  const [orgName, setOrgName] = useState("Novartis R&D Group");
+  const [userPlan, setUserPlan] = useState("Biotech Scale (Beta Campaign)");
 
   // Settings configs
   const [defaultSearch, setDefaultSearch] = useState("EGFR");
@@ -96,6 +102,18 @@ export default function Settings() {
   useEffect(() => {
     verifyBackend();
 
+    const storedUser = localStorage.getItem("biotarget_user");
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.email) setUserEmail(parsed.email);
+        if (parsed.orgName) setOrgName(parsed.orgName);
+      } catch (e) {}
+    }
+
+    const storedPlan = localStorage.getItem("biotarget_active_plan") || "Biotech Scale (Beta Campaign)";
+    setUserPlan(storedPlan);
+
     const storedSearch = localStorage.getItem("biotarget_default_search") || "EGFR";
     setDefaultSearch(storedSearch);
 
@@ -114,6 +132,17 @@ export default function Settings() {
 
   const handleSave = (e: FormEvent) => {
     e.preventDefault();
+    
+    // Save updated user profile
+    const storedUser = localStorage.getItem("biotarget_user");
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        parsed.orgName = orgName.trim();
+        localStorage.setItem("biotarget_user", JSON.stringify(parsed));
+      } catch (e) {}
+    }
+
     localStorage.setItem("biotarget_default_search", defaultSearch.trim().toUpperCase());
     localStorage.setItem("biotarget_export_format", exportFormat);
     localStorage.setItem("biotarget_show_marketing", showMarketing ? "true" : "false");
@@ -136,11 +165,68 @@ export default function Settings() {
       <div className="header-row">
         <div>
           <h1 className="page-title">Workspace Settings</h1>
-          <p className="subtitle">Configure full-stack AI engine credentials, database paths, and export preferences.</p>
+          <p className="subtitle">Configure organization details, full-stack AI engine credentials, database paths, and export preferences.</p>
         </div>
       </div>
 
       <form onSubmit={handleSave} className="settings-form-layout">
+        {/* Organization & Researcher Profile Card */}
+        <div className="settings-card glass-card">
+          <div className="section-header">
+            <Building size={16} />
+            <span>Organization & Researcher Profile</span>
+          </div>
+
+          <p className="settings-desc-text">
+            Manage your registered corporate organization, security parameters, and active platform license.
+          </p>
+
+          <div className="grid-cols-2" style={{ gap: "1rem", marginTop: "1rem" }}>
+            <div className="input-group">
+              <span className="input-label">Corporate Email (Read Only)</span>
+              <div className="auth-input-container">
+                <input
+                  type="email"
+                  className="input-field"
+                  value={userEmail}
+                  disabled
+                  style={{ background: "hsl(var(--bg-tertiary))", opacity: 0.8 }}
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <span className="input-label">Organization Name</span>
+              <div className="auth-input-container">
+                <input
+                  type="text"
+                  className="input-field"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="e.g. Novartis R&D Group"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <span className="input-label">Active SaaS Subscription</span>
+              <div className="input-field" style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "hsl(var(--accent-cyan) / 0.05)", borderColor: "hsl(var(--accent-cyan) / 0.2)" }}>
+                <Award size={14} className="text-cyan" />
+                <span className="font-semibold text-cyan">{userPlan}</span>
+              </div>
+            </div>
+
+            <div className="input-group">
+              <span className="input-label">Account Security Standard</span>
+              <div className="input-field" style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "hsl(var(--bg-tertiary))" }}>
+                <Lock size={14} className="text-cyan" />
+                <span className="text-muted font-mono" style={{ fontSize: "0.75rem" }}>PBKDF2 SHA-512 Encrypted</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Secure Backend Connection Status Card */}
         <div className="settings-card glass-card">
           <div className="section-header-flex">

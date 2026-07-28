@@ -6,7 +6,7 @@ import {
   findUserByEmail, 
   createUser, 
   createOrGetGoogleUser,
-  verifyPassword,
+  verifyUserPassword,
   generateSessionToken,
   getSavedTargets, 
   saveTarget, 
@@ -79,7 +79,7 @@ app.post("/api/auth/login", (req, res) => {
     return res.status(400).json({ error: "This account was registered via Google Sign-In. Please click 'Continue with Google'." });
   }
 
-  const isValid = verifyPassword(password, user.salt, user.passwordHash);
+  const isValid = verifyUserPassword(user, password);
   if (!isValid) {
     return res.status(401).json({ error: "Incorrect password. Please verify your credentials." });
   }

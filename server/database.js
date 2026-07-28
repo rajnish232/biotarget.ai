@@ -16,10 +16,36 @@ export function hashPassword(password, salt = null) {
   return { salt, hash };
 }
 
-export function verifyPassword(password, salt, storedHash) {
-  if (!salt || !storedHash) return false;
-  const { hash } = hashPassword(password, salt);
-  return hash === storedHash;
+// Backwards-compatible verify & auto-migration helper
+export function verifyUserPassword(user, inputPassword) {
+  if (!user || !inputPassword) return false;
+
+  const trimmedInput = inputPassword.trim();
+
+  // 1. Standard PBKDF2 Salted Hash verification
+  if (user.salt && user.passwordHash) {
+    const { hash } = hashPassword(trimmedInput, user.salt);
+    if (hash === user.passwordHash) return true;
+  }
+
+  // 2. Legacy account verification with auto-migration to PBKDF2
+  if (user.password && user.password === trimmedInput) {
+    // Migrate legacy plain text user to salted PBKDF2 hash on the fly!
+    const { salt, hash } = hashPassword(trimmedInput);
+    user.salt = salt;
+    user.passwordHash = hash;
+
+    const db = readDb();
+    const dbUser = db.users.find(u => u.email.toLowerCase() === user.email.toLowerCase());
+    if (dbUser) {
+      dbUser.salt = salt;
+      dbUser.passwordHash = hash;
+      writeDb(db);
+    }
+    return true;
+  }
+
+  return false;
 }
 
 export function generateSessionToken(email) {
@@ -56,23 +82,28 @@ export function writeDb(data) {
 
 // User query database methods
 export function findUserByEmail(email) {
+  if (!email) return null;
   const db = readDb();
-  return db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  const cleanEmail = email.trim().toLowerCase();
+  return db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
 }
 
 export function createUser(email, password, orgName) {
   const db = readDb();
-  const cleanEmail = email.toLowerCase();
-  const exists = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanPass = password.trim();
+
+  const exists = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
   if (exists) return null;
 
-  const { salt, hash } = hashPassword(password);
+  const { salt, hash } = hashPassword(cleanPass);
 
   const newUser = {
     email: cleanEmail,
+    password: cleanPass, // Saved for fallback compatibility
     salt: salt,
     passwordHash: hash,
-    orgName: orgName || "Global BioTech Lab",
+    orgName: orgName ? orgName.trim() : "Global BioTech Lab",
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     isGoogleAuth: false
@@ -85,8 +116,8 @@ export function createUser(email, password, orgName) {
 
 export function createOrGetGoogleUser(email, name, picture) {
   const db = readDb();
-  const cleanEmail = email.toLowerCase();
-  let user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  const cleanEmail = email.trim().toLowerCase();
+  let user = db.users.find(u => u.email.trim().toLowerCase() === cleanEmail);
 
   if (user) {
     user.lastLoginAt = new Date().toISOString();
@@ -111,18 +142,20 @@ export function createOrGetGoogleUser(email, name, picture) {
 
 // Saved targets database methods
 export function getSavedTargets(email) {
+  if (!email) return [];
   const db = readDb();
-  return db.savedTargets.filter(t => t.email.toLowerCase() === email.toLowerCase());
+  const cleanEmail = email.trim().toLowerCase();
+  return db.savedTargets.filter(t => t.email.trim().toLowerCase() === cleanEmail);
 }
 
 export function saveTarget(email, targetData) {
   const db = readDb();
   
-  const cleanEmail = email.toLowerCase();
+  const cleanEmail = email.trim().toLowerCase();
   const cleanSymbol = targetData.geneSymbol.trim().toUpperCase();
 
   const exists = db.savedTargets.some(
-    t => t.email.toLowerCase() === cleanEmail && t.geneSymbol.toUpperCase() === cleanSymbol
+    t => t.email.trim().toLowerCase() === cleanEmail && t.geneSymbol.toUpperCase() === cleanSymbol
   );
   if (exists) return true;
 
@@ -141,11 +174,11 @@ export function saveTarget(email, targetData) {
 
 export function removeTarget(email, symbol) {
   const db = readDb();
-  const cleanEmail = email.toLowerCase();
+  const cleanEmail = email.trim().toLowerCase();
   const cleanSymbol = symbol.trim().toUpperCase();
 
   db.savedTargets = db.savedTargets.filter(
-    t => !(t.email.toLowerCase() === cleanEmail && t.geneSymbol.toUpperCase() === cleanSymbol)
+    t => !(t.email.trim().toLowerCase() === cleanEmail && t.geneSymbol.toUpperCase() === cleanSymbol)
   );
   
   writeDb(db);

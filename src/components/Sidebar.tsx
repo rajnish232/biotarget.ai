@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Target, GitCompare, Sparkles, CreditCard, Settings, Dna, LogOut, LogOutIcon } from "lucide-react";
+import { LayoutDashboard, Target, GitCompare, Sparkles, CreditCard, Settings, Dna, LogOut, LogOutIcon, Users } from "lucide-react";
+import TeamInviteModal from "./TeamInviteModal";
 
 interface SidebarProps {
   currentView: string;
@@ -21,6 +22,7 @@ export default function Sidebar({
   userOrg
 }: SidebarProps) {
   const [activePlan, setActivePlan] = useState("Biotech Scale");
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
 
   useEffect(() => {
     const plan = localStorage.getItem("biotarget_plan") || "Biotech Scale";
@@ -50,62 +52,79 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="sidebar">
-      <div className="logo-container">
-        <Dna className="logo-icon" />
-        <span className="logo-text">BioTarget <span className="logo-highlight">AI</span></span>
-      </div>
+    <>
+      <aside className="sidebar">
+        <div className="logo-container">
+          <Dna className="logo-icon" />
+          <span className="logo-text">BioTarget <span className="logo-highlight">AI</span></span>
+        </div>
 
-      <nav className="nav-menu">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id)}
-              className={`nav-item ${isActive ? "active" : ""}`}
-            >
-              <Icon className="nav-icon" size={18} />
-              <span className="nav-label">{item.label}</span>
-              {item.badge && (
-                <span className="nav-badge">{item.badge}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+        <nav className="nav-menu">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentView === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onViewChange(item.id)}
+                className={`nav-item ${isActive ? "active" : ""}`}
+              >
+                <Icon className="nav-icon" size={18} />
+                <span className="nav-label">{item.label}</span>
+                {item.badge && (
+                  <span className="nav-badge">{item.badge}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-      <div className="sidebar-footer">
-        <div className="user-profile">
-          <div className="avatar">{getInitials(userEmail)}</div>
-          <div className="user-info">
-            <span className="username" title={userEmail}>{userEmail || "Dr. Researcher"}</span>
-            <span className="role" title={userOrg}>{userOrg || "Principal Scientist"}</span>
+        <div className="sidebar-footer">
+          <button 
+            onClick={() => setIsTeamModalOpen(true)} 
+            className="btn btn-secondary w-full" 
+            style={{ marginBottom: "0.75rem", fontSize: "0.75rem", gap: "0.4rem" }}
+          >
+            <Users size={12} className="text-cyan" />
+            <span>Invite Lab Teammates</span>
+          </button>
+
+          <div className="user-profile">
+            <div className="avatar">{getInitials(userEmail)}</div>
+            <div className="user-info">
+              <span className="username" title={userEmail}>{userEmail || "Dr. Researcher"}</span>
+              <span className="role" title={userOrg}>{userOrg || "Principal Scientist"}</span>
+            </div>
+          </div>
+          
+          <div className="plan-badge">
+            <Sparkles size={12} className="plan-badge-icon" />
+            <span>{activePlan} Tier</span>
+          </div>
+
+          <div className="footer-buttons-row">
+            {onExitConsole && (
+              <button onClick={onExitConsole} className="exit-console-btn" title="Return to Landing Page">
+                <LogOut size={12} />
+                <span>Exit Workspace</span>
+              </button>
+            )}
+
+            {onLogout && (
+              <button onClick={onLogout} className="exit-console-btn signout-btn" title="Sign Out Profile">
+                <LogOutIcon size={12} />
+                <span>Sign Out</span>
+              </button>
+            )}
           </div>
         </div>
-        
-        <div className="plan-badge">
-          <Sparkles size={12} className="plan-badge-icon" />
-          <span>{activePlan} Tier</span>
-        </div>
+      </aside>
 
-        <div className="footer-buttons-row">
-          {onExitConsole && (
-            <button onClick={onExitConsole} className="exit-console-btn" title="Return to Landing Page">
-              <LogOut size={12} />
-              <span>Exit Workspace</span>
-            </button>
-          )}
-
-          {onLogout && (
-            <button onClick={onLogout} className="exit-console-btn signout-btn" title="Sign Out Profile">
-              <LogOutIcon size={12} />
-              <span>Sign Out</span>
-            </button>
-          )}
-        </div>
-      </div>
+      <TeamInviteModal
+        isOpen={isTeamModalOpen}
+        onClose={() => setIsTeamModalOpen(false)}
+        orgName={userOrg || "Novartis R&D Group"}
+      />
 
       <style>{`
         .sidebar {
@@ -334,6 +353,6 @@ export default function Sidebar({
           }
         }
       `}</style>
-    </aside>
+    </>
   );
 }

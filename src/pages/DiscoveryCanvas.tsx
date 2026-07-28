@@ -11,6 +11,8 @@ import SubcellularVisualizer from "../components/SubcellularVisualizer";
 import CompoundTable from "../components/CompoundTable";
 import ReportPDF from "../components/ReportPDF";
 import { exportTargetToCSV } from "../utils/csvExport";
+import Protein3DViewer from "../components/Protein3DViewer";
+import FDAToxicityProfiler from "../components/FDAToxicityProfiler";
 
 interface DiscoveryCanvasProps {
   data: BioTargetData | null;
@@ -277,6 +279,9 @@ export default function DiscoveryCanvas({
         </div>
       </div>
 
+      {/* 3D Interactive Protein Pocket Architecture Visualizer */}
+      <Protein3DViewer geneSymbol={data.geneSymbol} uniprotId={data.uniprotId} />
+
       {/* Stats Summary Cards */}
       <div className="grid-cols-3">
         <MetricCard
@@ -491,6 +496,9 @@ export default function DiscoveryCanvas({
               </div>
             </div>
           </div>
+
+          {/* FDA Failure Post-Mortem & GTEx Organ Toxicity Profiler */}
+          <FDAToxicityProfiler geneSymbol={data.geneSymbol} />
 
           {/* Actionable Next Steps */}
           <div className="recommendations-card glass-card">

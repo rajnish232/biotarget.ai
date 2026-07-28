@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { 
   Box, RotateCw, ZoomIn, ZoomOut, Maximize2, Download, Flame
 } from "lucide-react";
+import type { PdbData } from "../services/api";
 
 interface ProteinStructureData {
   pdbId: string;
@@ -98,9 +99,10 @@ const SCIENTIFIC_STRUCTURE_MAP: Record<string, ProteinStructureData> = {
 interface Protein3DViewerProps {
   geneSymbol: string;
   uniprotId: string;
+  livePdbData?: PdbData;
 }
 
-export default function Protein3DViewer({ geneSymbol, uniprotId }: Protein3DViewerProps) {
+export default function Protein3DViewer({ geneSymbol, uniprotId, livePdbData }: Protein3DViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
   // Controls
@@ -115,20 +117,23 @@ export default function Protein3DViewer({ geneSymbol, uniprotId }: Protein3DView
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
-  const upperSymbol = geneSymbol.trim().toUpperCase();
-  const structureData = SCIENTIFIC_STRUCTURE_MAP[upperSymbol] || {
-    pdbId: "1M17",
-    alphaFoldId: `AF-${uniprotId}-F1`,
-    resolution: "2.10 Å",
-    method: "X-Ray Crystallography / AlphaFold 3D",
-    pocketVolume: "780 Å³",
-    activeResidues: [
+  const upperSymbol = geneSymbol ? geneSymbol.trim().toUpperCase() : "EGFR";
+  const safeUniprot = uniprotId || "P01116";
+
+  const mappedData = SCIENTIFIC_STRUCTURE_MAP[upperSymbol];
+  const structureData: ProteinStructureData = {
+    pdbId: livePdbData?.pdbId || mappedData?.pdbId || "6OIM",
+    alphaFoldId: livePdbData?.alphaFoldId || mappedData?.alphaFoldId || `AF-${safeUniprot}-F1`,
+    resolution: livePdbData?.resolution || mappedData?.resolution || "2.10 Å",
+    method: livePdbData?.method || mappedData?.method || "X-Ray Crystallography / AlphaFold 3D",
+    pocketVolume: livePdbData?.pocketVolume || mappedData?.pocketVolume || "780 Å³",
+    activeResidues: mappedData?.activeResidues || [
       { residue: "Lys", position: 120, role: "Primary Druggable Pocket" },
       { residue: "Asp", position: 154, role: "Catalytic Active Site" },
       { residue: "Cys", position: 180, role: "Covalent Ligand Binding" }
     ],
-    helicesCount: 12,
-    sheetsCount: 8
+    helicesCount: mappedData?.helicesCount || 12,
+    sheetsCount: mappedData?.sheetsCount || 8
   };
 
   // Auto 360-degree rotation loop

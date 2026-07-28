@@ -56,6 +56,21 @@ export interface DatabaseVersion {
   version: string;
 }
 
+export interface PdbData {
+  pdbId: string;
+  alphaFoldId: string;
+  resolution: string;
+  method: string;
+  pocketVolume: string;
+}
+
+export interface OpenFdaToxicity {
+  totalEventsScanned: number;
+  heartEvents: number;
+  liverEvents: number;
+  lungEvents: number;
+}
+
 export interface BioTargetData {
   geneSymbol: string;
   fullName: string;
@@ -72,6 +87,8 @@ export interface BioTargetData {
   depMap: DepMapData;
   patents: PatentData;
   dbVersions: DatabaseVersion[];
+  pdbData?: PdbData;
+  openFdaToxicity?: OpenFdaToxicity;
 }
 
 // Enterprise Standard Release Logs

@@ -280,7 +280,7 @@ export default function DiscoveryCanvas({
       </div>
 
       {/* 3D Interactive Protein Pocket Architecture Visualizer */}
-      <Protein3DViewer geneSymbol={data.geneSymbol} uniprotId={data.uniprotId} />
+      <Protein3DViewer geneSymbol={data.geneSymbol} uniprotId={data.uniprotId} livePdbData={data.pdbData} />
 
       {/* Stats Summary Cards */}
       <div className="grid-cols-3">
@@ -498,7 +498,7 @@ export default function DiscoveryCanvas({
           </div>
 
           {/* FDA Failure Post-Mortem & GTEx Organ Toxicity Profiler */}
-          <FDAToxicityProfiler geneSymbol={data.geneSymbol} />
+          <FDAToxicityProfiler geneSymbol={data.geneSymbol} liveOpenFdaToxicity={data.openFdaToxicity} />
 
           {/* Actionable Next Steps */}
           <div className="recommendations-card glass-card">

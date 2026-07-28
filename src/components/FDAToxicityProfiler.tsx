@@ -1,6 +1,7 @@
 import { 
   ShieldAlert, Heart, Activity, AlertTriangle, FileText
 } from "lucide-react";
+import type { OpenFdaToxicity } from "../services/api";
 
 interface ToxicityData {
   riskScore: number; // 0 to 100
@@ -69,12 +70,14 @@ const SCIENTIFIC_TOXICITY_MAP: Record<string, ToxicityData> = {
 
 interface FDAToxicityProfilerProps {
   geneSymbol: string;
+  liveOpenFdaToxicity?: OpenFdaToxicity;
 }
 
-export default function FDAToxicityProfiler({ geneSymbol }: FDAToxicityProfilerProps) {
-  const upperSymbol = geneSymbol.trim().toUpperCase();
+export default function FDAToxicityProfiler({ geneSymbol, liveOpenFdaToxicity }: FDAToxicityProfilerProps) {
+  const upperSymbol = geneSymbol ? geneSymbol.trim().toUpperCase() : "EGFR";
   
-  const toxData = SCIENTIFIC_TOXICITY_MAP[upperSymbol] || {
+  const mappedData = SCIENTIFIC_TOXICITY_MAP[upperSymbol];
+  const toxData = mappedData || {
     riskScore: 28,
     overallStatus: "Low Risk Profile",
     organs: {
@@ -102,6 +105,11 @@ export default function FDAToxicityProfiler({ geneSymbol }: FDAToxicityProfilerP
         </div>
 
         <div className="tox-overall-badge">
+          {liveOpenFdaToxicity && (
+            <span className="badge badge-purple" style={{ fontSize: "0.68rem" }}>
+              OpenFDA API ({liveOpenFdaToxicity.totalEventsScanned} Cases)
+            </span>
+          )}
           <span className="tox-score-val">{toxData.riskScore}</span>
           <span className="tox-score-denom">/100 Risk</span>
           <span className={`badge ${toxData.riskScore > 60 ? "badge-rose" : toxData.riskScore > 35 ? "badge-gold" : "badge-cyan"}`}>
